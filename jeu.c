@@ -3,7 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "jeu.h"
-/*
+
 // Variables globales
 pthread_mutex_t mutexMots = PTHREAD_MUTEX_INITIALIZER;
 pthread_t threadBombe;
@@ -93,4 +93,4 @@ void ajouterMot(const char* mot) {
     } else {
         printf("Erreur : limite des mots utilisés atteinte.\n");
     }
-}*/
+}
