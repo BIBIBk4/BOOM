@@ -18,13 +18,13 @@ main.o: main.c jeu.h
 joueur: joueur.o jeu.o
 	$(CC) $(CFLAGS) -o joueur joueur.o jeu.o
 
-joueur.o: joueur.c
+joueur.o: joueur.c jeu.h
 	$(CC) $(CFLAGS) -c joueur.c
 
-serveur: serveur.o
-	$(CC) $(CFLAGS) -o serveur serveur.o
+serveur: serveur.o jeu.o
+	$(CC) $(CFLAGS) -o serveur serveur.o jeu.o
 
-serveur.o: serveur.c
+serveur.o: serveur.c jeu.h
 	$(CC) $(CFLAGS) -c serveur.c
 
 clean:

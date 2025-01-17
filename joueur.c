@@ -70,9 +70,8 @@ int main() {
 
     envoyerPresence(idFile);
 
-    // Boucle infinie pour attendre les signaux
     while (1) {
-        pause(); // Attendre un signal
+        pause();
     }
 
     return 0;
