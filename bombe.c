@@ -87,7 +87,7 @@ int main() {
             continue;
         }
 
-        if(strcmp(msg.corps.msg,"PRET")==0){
+        if(strcmp(msg.corps.msg,"PRET")==0 && nbJoueurs>=2){
            mettreJoueurPret(msg.corps.pid);
 
            if(tousLesJoueursSontPret()){
