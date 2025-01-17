@@ -43,6 +43,28 @@ void ajouterJoueur(pid_t pid, const char *pseudo) {
     printf("Joueur ajouté : PID=%d, Pseudo=%s\n", pid, pseudo);
 }
 
+void mettreJoueurPret(pid_t pid) {
+    for (int i = 0; i < nbJoueurs; i++) {
+        if (joueurs[i].pid == pid) {
+            joueurs[i].estPret = true;
+            printf("Le joueur %s (PID: %d) est maintenant prêt.\n", joueurs[i].pseudo, pid);
+            return;
+        }
+    }
+    printf("Joueur avec PID %d non trouvé.\n", pid);
+}
+
+
+int tousLesJoueursSontPret() {
+    for (int i = 0; i < nbJoueurs; i++) {
+        if (joueurs[i].estPret == false) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
 int main() {
 
     key_t cle = ftok("./dictionnaire.txt", 1);
@@ -66,11 +88,19 @@ int main() {
             continue;
         }
 
-        ajouterJoueur(msg.corps.pid, msg.corps.msg);
+        if(strcmp(msg.corps.msg,"PRET")==0){
+           mettreJoueurPret(msg.corps.pid);
 
-        printf("Liste des joueurs actuels :\n");
-        for (int i = 0; i < nbJoueurs; i++) {
-            printf("PID=%d, Pseudo=%s\n", joueurs[i].pid, joueurs[i].pseudo);
+           if(tousLesJoueursSontPret()){
+            printf("Tous les joueurs sont prets !\n");
+           }
+        }else{
+           ajouterJoueur(msg.corps.pid, msg.corps.msg);
+
+           printf("Liste des joueurs actuels :\n");
+           for (int i = 0; i < nbJoueurs; i++) {
+               printf("PID=%d, Pseudo=%s\n", joueurs[i].pid, joueurs[i].pseudo);
+            }
         }
     }
 
