@@ -1,24 +1,42 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
+#include <time.h>
 #include "jeu.h"
-#include "bombe.h"
 
 int main() {
+    // Initialisation
     srand(time(NULL));
+    printf("Bienvenue dans le jeu Tik Tak Boum !\n\n");
 
-    printf("Entrez le nombre de joueurs (2 à %d) : ", MAX_JOUEURS);
-    scanf("%d", &nbJoueurs);
-    if (nbJoueurs < 2 || nbJoueurs > MAX_JOUEURS) {
-        printf("Nombre de joueurs invalide !\n");
-        return 1;
+    // Générer une combinaison aléatoire
+    genererCombinaison();
+    printf("La combinaison actuelle est : %s\n", combinaisonActuelle);
+
+    char mot[50];
+    while (1) {
+        printf("\nEntrez un mot contenant la combinaison \"%s\" (ou 'exit' pour quitter) : ", combinaisonActuelle);
+        scanf("%49s", mot);
+
+        // Quitter le jeu si l'utilisateur entre 'exit'
+        if (strcmp(mot, "exit") == 0) {
+            printf("Merci d'avoir joué !\n");
+            break;
+        }
+
+        // Vérifier si le mot est valide
+        if (motEstValide(mot)) {
+            printf("Mot accepté !\n");
+            ajouterMot(mot);
+        } else {
+            printf("Mot invalide ou déjà utilisé. Essayez encore.\n");
+        }
+
+        // Afficher les mots utilisés
+        printf("\nMots utilisés jusqu'à présent :\n");
+        for (int i = 0; i < nbMotsUtilises; i++) {
+            printf("%s\n", motsUtilises[i]);
+        }
     }
 
-    genererCombinaison();
-    pthread_create(&threadBombe, NULL, gestionBombe, NULL);
-    tourDeJeu();
-    pthread_join(threadBombe, NULL);
-
-    printf("Fin de la partie. Le joueur %d a perdu !\n", joueurElimine);
     return 0;
 }
