@@ -1,12 +1,14 @@
 #include <unistd.h>
 #include <stdbool.h>
+#include <signal.h>
+
 
 #define SIG_MOTVALIDE SIGUSR1
 #define SIG_MOTINVALIDE SIGUSR2
 #define SIG_PERTEVIE SIGCHLD
 #define SIG_ATONTOUR SIGPWR
-#define SIG_PSEUDOVALIDE (SIGRTMIN)
-#define SIG_PSEUDOINVALIDE (SIGRTMIN+1)
+#define SIG_PSEUDOVALIDE SIGRTMIN
+#define SIG_PSEUDOINVALIDE SIGRTMIN+1
 
 #define FICHIER "./dictionnaire.txt"
 
