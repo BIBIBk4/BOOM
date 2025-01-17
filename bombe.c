@@ -23,12 +23,11 @@ void ajouterJoueur(pid_t pid, const char *pseudo) {
     for (int i = 0; i < nbJoueurs; i++) {
         if (strcmp(joueurs[i].pseudo, pseudo) == 0) {
             printf("Le pseudo %s est déjà pris !\n", pseudo);
+            if (kill(pid, SIG_PSEUDOINVALIDE) == -1) {
+                perror("Erreur lors de l'envoi du signal SIGPSEUDOINVALIDE");
+            }
             return;
         }
-    }
-
-    if (kill(pid, SIG_PSEUDOINVALIDE) == -1) {
-        perror("Erreur lors de l'envoi du signal SIGPSEUDOINVALIDE");
     }
 
     joueurs[nbJoueurs].pid = pid;
