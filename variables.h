@@ -1,5 +1,10 @@
 #include <unistd.h>
 
+#define SIG_MOTVALIDE SIGUSR1
+#define SIG_MOTINVALIDE SIGUSR2
+#define SIG_PERTEVIE SIGCHLD
+#define SIG_ATONTOUR SIGPWR
+
 /* Corps des messages qui transitent, utilisé par le joueur et le jeu */
 typedef struct corps {
     pid_t pid; /* pid de l'émetteur du message */
