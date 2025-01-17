@@ -35,44 +35,45 @@ void envoyerMessage(int bol, char *reponse) {
 }
 
 void demanderPret() {
-    printf("Appuyer sur une touche lorsque vous êtres prêt à jouer\n");
+    printf("Appuyez sur une touche lorsque vous êtes prêt\n");
     getchar();
 }
 
-// Gestionnaire de signal pour SIGWINCH
+// Gestionnaire de signal pour SIG_PSEUDOVALIDE
 void pseudoValide(int sig) {
     printf("Pseudo valide !\n");
-    demanderPret();
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), IPC_EXCL), "pret");
+    while(getchar() != 'a');
+    printf("Envoi du message PRET\n");
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), IPC_EXCL), "PRET");
     printf("En attente des autres joueurs...\n");
 }
 
-// Gestionnaire de signal pour SIGURG
+// Gestionnaire de signal pour SIG_PSEUDOINVALIDE
 void pseudoInvalide(int sig) {
     printf("Pseudo invalide !\n");
     envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), IPC_EXCL), demanderPseudo());
 }
 
-// Gestionnaire de signal pour SIGUSR1
+// Gestionnaire de signal pour SIG_MOTVALIDE
 void motValide(int sig) {
     printf("Mot rentré valide ! Au tour du joueur suivant\n");
     // Ajoutez ici le code de la fonction à exécuter
 }
 
-// Gestionnaire de signal pour SIGUSR2
+// Gestionnaire de signal pour SIG_MOTINVALIDE
 void motInvalide(int sig) {
     printf("Mot entré invalide ! \n");
     envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), IPC_EXCL), demanderReponse());
     // Ajoutez ici le code de la fonction à exécuter
 }
 
-// Gestionnaire de signal pour SIGPWR
+// Gestionnaire de signal pour SIG_ATONTOUR
 void aTonTour(int sig) {
     printf("C'est à votre tour de jouer !\n");
     envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), IPC_EXCL), demanderReponse());
 }
 
-// Gestionnaire de signal pour SIGCHLD
+// Gestionnaire de signal pour SIG_PERTEVIE
 void perdu(int sig) {
     printf("Vous avez perdu !\n");
 }
@@ -97,40 +98,40 @@ int main() {
     sigemptyset(&sigPerdu.sa_mask);
     sigPerdu.sa_flags = 0;
 
-    sigPseudoValide.sa_handler = NULL;
+    sigPseudoValide.sa_handler = pseudoValide;
     sigemptyset(&sigPseudoValide.sa_mask);
     sigPseudoValide.sa_flags = 0;
 
-    sigPseudoInvalide.sa_handler = NULL;
+    sigPseudoInvalide.sa_handler = pseudoInvalide;
     sigemptyset(&sigPseudoInvalide.sa_mask);
     sigPseudoInvalide.sa_flags = 0;
 
-    if (sigaction(SIGUSR1, &sigMotValide, NULL) == -1) {
+    if (sigaction(SIG_MOTVALIDE, &sigMotValide, NULL) == -1) {
         perror("Erreur lors de l'enregistrement du gestionnaire de SIGUSR1");
         exit(1);
     }
 
-    if (sigaction(SIGUSR2, &sigMotinValide, NULL) == -1) {
+    if (sigaction(SIG_MOTINVALIDE, &sigMotinValide, NULL) == -1) {
         perror("Erreur lors de l'enregistrement du gestionnaire de SIGUSR2");
         exit(1);
     }
 
-    if (sigaction(SIGPWR, &sigPerdu, NULL) == -1) {
+    if (sigaction(SIG_PERTEVIE, &sigPerdu, NULL) == -1) {
         perror("Erreur lors de l'enregistrement du gestionnaire de SIGCHLD");
         exit(1);
     }
 
-    if (sigaction(SIGCHLD, &sigATonTour, NULL) == -1) {
+    if (sigaction(SIG_ATONTOUR, &sigATonTour, NULL) == -1) {
         perror("Erreur lors de l'enregistrement du gestionnaire de SIGPWR");
         exit(1);
     }
 
-    if (sigaction(SIGRTMIN, &sigPseudoValide, NULL) == -1) {
+    if (sigaction(SIG_PSEUDOVALIDE, &sigPseudoValide, NULL) == -1) {
         perror("Erreur lors de l'enregistrement du gestionnaire de SIGPSEUDOVALIDE");
         exit(1);
     }
 
-    if (sigaction(SIGRTMIN+1, &sigPseudoInvalide, NULL) == -1) {
+    if (sigaction(SIG_PSEUDOINVALIDE, &sigPseudoInvalide, NULL) == -1) {
         perror("Erreur lors de l'enregistrement du gestionnaire de SIGPSEUDOINVALIDE");
         exit(1);
     }
