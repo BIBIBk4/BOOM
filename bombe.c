@@ -27,10 +27,19 @@ void ajouterJoueur(pid_t pid, const char *pseudo) {
         }
     }
 
+    if (kill(pid, SIG_PSEUDOINVALIDE) == -1) {
+        perror("Erreur lors de l'envoi du signal SIGPSEUDOINVALIDE");
+    }
+
     joueurs[nbJoueurs].pid = pid;
     strncpy(joueurs[nbJoueurs].pseudo, pseudo, sizeof(joueurs[nbJoueurs].pseudo) - 1);
     joueurs[nbJoueurs].pseudo[sizeof(joueurs[nbJoueurs].pseudo) - 1] = '\0';
     nbJoueurs++;
+
+    if (kill(pid, SIG_PSEUDOVALIDE) == -1) {
+        perror("Erreur lors de l'envoi du signal SIGPSEUDOVALIDE");
+    }
+
     printf("Joueur ajouté : PID=%d, Pseudo=%s\n", pid, pseudo);
 }
 

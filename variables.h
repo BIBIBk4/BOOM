@@ -5,14 +5,14 @@
 #define SIG_MOTINVALIDE SIGUSR2
 #define SIG_PERTEVIE SIGCHLD
 #define SIG_ATONTOUR SIGPWR
-#define SIG_PSEUDOVALIDE SIGWINCH
-#define SIG_PSEUDOINVALIDE SIGURG
+#define SIG_PSEUDOVALIDE (SIGRTMIN)
+#define SIG_PSEUDOINVALIDE (SIGRTMIN+1)
 
 #define FICHIER "./dictionnaire.txt"
 
 /* Corps des messages qui transitent, utilisé par le joueur et le jeu */
 typedef struct corps {
-    pid_t pid; /* pid de l'émetteur du message */
+    pid_t pid; 
     char msg[256];
 } t_corps;
 
