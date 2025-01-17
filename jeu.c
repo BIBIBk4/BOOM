@@ -28,33 +28,6 @@ char *syllabes[MAX_SYLLABES] = {
     "un", "ou", "oi", "ui", "é", "è", "ç", "ch", "gh", "qu"
 };
 
-// Gérer les tours de jeu
-void tourDeJeu() {
-    while (joueurElimine == -1) {
-        pthread_mutex_lock(&mutexMots);
-        printf("\nJoueur %d, c'est votre tour ! Temps restant : %d secondes.\n", joueurActuel, bombeTempsRestant);
-        printf("Combinaison actuelle : '%s'\n", combinaisonActuelle);
-
-        char mot[50];
-        printf("Entrez un mot contenant la combinaison : ");
-        scanf("%s", mot);
-
-        if (motEstValide(mot)) {
-            printf("Mot accepté !\n");
-            ajouterMot(mot);
-            joueurActuel = (joueurActuel + 1) % nbJoueurs;
-            bombeTempsRestant = 10;
-            genererCombinaison();
-        } else {
-            printf("Mot invalide ou déjà utilisé !\n");
-            bombeTempsRestant -= 2;
-        }
-
-        pthread_mutex_unlock(&mutexMots);
-        sleep(1);
-    }
-}
-
 // Générer une combinaison aléatoire
 void genererCombinaison() {
     int index = rand() % MAX_SYLLABES;
@@ -72,6 +45,12 @@ int motEstValide(const char* mot) {
         return 0;
     }
 
+    //Vérifier si le mot existe dans le fichier dictionnaire
+    if (!checkMot(mot)) {
+        pthread_mutex_unlock(&mutexMots);
+        return 0;
+    }
+
     // Vérifier si le mot a déjà été utilisé
     for (int i = 0; i < nbMotsUtilises; i++) {
         if (strcmp(motsUtilises[i], mot) == 0) {
@@ -84,13 +63,59 @@ int motEstValide(const char* mot) {
     return 1;
 }
 
-
 // Ajouter un mot à la liste
 void ajouterMot(const char* mot) {
     if (nbMotsUtilises < MAX_MOTS) {
         strncpy(motsUtilises[nbMotsUtilises++], mot, sizeof(motsUtilises[0]) - 1);
-        motsUtilises[nbMotsUtilises - 1][sizeof(motsUtilises[0]) - 1] = '\0'; // Assurez-vous de la terminaison
+        motsUtilises[nbMotsUtilises - 1][sizeof(motsUtilises[0]) - 1] = '\0';
     } else {
         printf("Erreur : limite des mots utilisés atteinte.\n");
     }
+}
+
+int checkMot(char* saisie){
+
+    saisie[strcspn(saisie, "\n")] = '\0';
+
+    convertir_en_majuscules(saisie);
+
+    if (mot_existe_dans_fichier(saisie, FICHIER_DICTIONNAIRE)) {
+        return 1;
+    }
+
+    return 0;
+}
+
+// Fonction pour convertir une chaîne en majuscules
+void convertir_en_majuscules(char *chaine) {
+    for (int i = 0; chaine[i]; i++) {
+        chaine[i] = toupper((unsigned char)chaine[i]);
+    }
+}
+
+// Fonction pour vérifier si un mot existe dans un fichier
+int mot_existe_dans_fichier(const char *mot, const char *nom_fichier) {
+    FILE *fichier = fopen(nom_fichier, "r");
+    if (fichier == NULL) {
+        perror("Erreur lors de l'ouverture du fichier");
+        return 0;
+    }
+
+    char ligne[TAILLE_MAX];
+    while (fgets(ligne, sizeof(ligne), fichier)) {
+        // Enlever le '\n' à la fin de chaque mot lu
+        ligne[strcspn(ligne, "\n")] = '\0';
+
+        // Convertir la ligne lue en majuscules pour la comparaison
+        convertir_en_majuscules(ligne);
+
+        // Comparer les mots
+        if (strcmp(mot, ligne) == 0) {
+            fclose(fichier);
+            return 1; 
+        }
+    }
+
+    fclose(fichier);
+    return 0;
 }
