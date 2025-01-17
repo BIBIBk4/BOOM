@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <stdbool.h>
 
 #define SIG_MOTVALIDE SIGUSR1
 #define SIG_MOTINVALIDE SIGUSR2
@@ -17,3 +18,10 @@ typedef struct {
     long type;
     t_corps corps;
 } t_message;
+
+typedef struct {
+    pid_t pid;
+    bool estPret;
+    char pseudo[50];
+} t_joueur;
+
