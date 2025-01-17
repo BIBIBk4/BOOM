@@ -14,11 +14,19 @@ char *demanderPseudo() {
     return pseudo;
 }
 
-void envoyerPresence(int bol) {
+char *demanderReponse() {
+    char *reponse = malloc(50 * sizeof(char));
+    printf("Entrez votre mot : ");
+    scanf("%s", reponse);
+    return reponse;
+}
+
+void envoyerMessage(int bol, char *reponse) {
     t_message message;
     message.type = 1;
     message.corps.pid = getpid();
-    strcpy(message.corps.msg, demanderPseudo());
+    printf("pid : %d\n", message.corps.pid);
+    strcpy(message.corps.msg, reponse);
 
     if (msgsnd(bol, &message, sizeof(t_corps), 0) == -1) {
         perror("Erreur lors de l'envoi du message");
@@ -27,36 +35,68 @@ void envoyerPresence(int bol) {
 }
 
 // Gestionnaire de signal pour SIGUSR1
-void handle_sigusr1(int sig) {
-    printf("Reçu SIGUSR1 ! Exécution de la fonction correspondante.\n");
+void motValide(int sig) {
+    printf("Mot rentré valide ! Au tour du joueur suivant\n");
     // Ajoutez ici le code de la fonction à exécuter
 }
 
 // Gestionnaire de signal pour SIGUSR2
-void handle_sigusr2(int sig) {
-    printf("Reçu SIGUSR2 ! Exécution de la fonction correspondante.\n");
+void motInvalide(int sig) {
+    printf("Mot entré invalide ! \n");
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), IPC_EXCL), demanderReponse());
+    // Ajoutez ici le code de la fonction à exécuter
+}
+
+// Gestionnaire de signal pour SIGPWR
+void aTonTour(int sig) {
+    printf("C'est à votre tour de jouer !\n");
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), IPC_EXCL), demanderReponse());
+    // Ajoutez ici le code de la fonction à exécuter
+}
+
+// Gestionnaire de signal pour SIGCHLD
+void perdu(int sig) {
+    printf("Vous avez perdu !\n");
     // Ajoutez ici le code de la fonction à exécuter
 }
 
 int main() {
     // Enregistrement des gestionnaires de signaux
-    struct sigaction sa1, sa2;
+    struct sigaction sigMotValide, sigMotinValide, sigPerdu, sigATonTour;
 
-    sa1.sa_handler = handle_sigusr1;
-    sigemptyset(&sa1.sa_mask);
-    sa1.sa_flags = 0;
+    sigMotValide.sa_handler = motValide;
+    sigemptyset(&sigMotValide.sa_mask);
+    sigMotValide.sa_flags = 0;
 
-    sa2.sa_handler = handle_sigusr2;
-    sigemptyset(&sa2.sa_mask);
-    sa2.sa_flags = 0;
+    sigMotinValide.sa_handler = motInvalide;
+    sigemptyset(&sigMotinValide.sa_mask);
+    sigMotinValide.sa_flags = 0;
 
-    if (sigaction(SIGUSR1, &sa1, NULL) == -1) {
+    sigATonTour.sa_handler = aTonTour;
+    sigemptyset(&sigATonTour.sa_mask);
+    sigATonTour.sa_flags = 0;
+
+    sigPerdu.sa_handler = perdu;
+    sigemptyset(&sigPerdu.sa_mask);
+    sigPerdu.sa_flags = 0;
+
+    if (sigaction(SIGUSR1, &sigMotValide, NULL) == -1) {
         perror("Erreur lors de l'enregistrement du gestionnaire de SIGUSR1");
         exit(1);
     }
 
-    if (sigaction(SIGUSR2, &sa2, NULL) == -1) {
+    if (sigaction(SIGUSR2, &sigMotinValide, NULL) == -1) {
         perror("Erreur lors de l'enregistrement du gestionnaire de SIGUSR2");
+        exit(1);
+    }
+
+    if (sigaction(SIGPWR, &sigPerdu, NULL) == -1) {
+        perror("Erreur lors de l'enregistrement du gestionnaire de SIGCHLD");
+        exit(1);
+    }
+
+    if (sigaction(SIGCHLD, &sigATonTour, NULL) == -1) {
+        perror("Erreur lors de l'enregistrement du gestionnaire de SIGPWR");
         exit(1);
     }
 
@@ -68,7 +108,7 @@ int main() {
         return 1;
     }
 
-    envoyerPresence(idFile);
+    envoyerMessage(idFile, demanderPseudo());
 
     // Boucle infinie pour attendre les signaux
     while (1) {
