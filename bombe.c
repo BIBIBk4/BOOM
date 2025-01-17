@@ -19,6 +19,14 @@ void ajouterJoueur(pid_t pid, const char *pseudo) {
         printf("Limite de joueurs atteinte !\n");
         return;
     }
+
+    for (int i = 0; i < nbJoueurs; i++) {
+        if (strcmp(joueurs[i].pseudo, pseudo) == 0) {
+            printf("Le pseudo %s est déjà pris !\n", pseudo);
+            return;
+        }
+    }
+
     joueurs[nbJoueurs].pid = pid;
     strncpy(joueurs[nbJoueurs].pseudo, pseudo, sizeof(joueurs[nbJoueurs].pseudo) - 1);
     joueurs[nbJoueurs].pseudo[sizeof(joueurs[nbJoueurs].pseudo) - 1] = '\0';
