@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include "jeu.h"
 
 int main() {
     // Initialisation
     srand(time(NULL));
-    printf("Bienvenue dans le jeu Tik Tak Boum !\n\n");
+    printf("Bienvenue dans le jeu Tik Tak Boum dans ton Ben !\n\n");
 
     // Générer une combinaison aléatoire
     genererCombinaison();
