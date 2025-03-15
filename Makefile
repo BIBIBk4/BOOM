@@ -1,13 +1,13 @@
 CC = gcc
 CFLAGS = -Wall -pthread
 
-all: jeu joueur serveur
+all: bombe joueur serveur
 
 jeu: bombe.o jeu.o main.o
 	$(CC) $(CFLAGS) -o jeu bombe.o jeu.o main.o
 
-bombe.o: bombe.c jeu.h
-	$(CC) $(CFLAGS) -c bombe.c
+bombe : bombe.c
+	$(CC) $(CFLAGS) -o bombe bombe.c
 
 jeu.o: jeu.c jeu.h
 	$(CC) $(CFLAGS) -c jeu.c

@@ -36,7 +36,7 @@ void genererCombinaison() {
 }
 
 // Vérifier si un mot est valide
-int motEstValide(const char* mot) {
+int motEstValide(char* mot) {
     pthread_mutex_lock(&mutexMots);
 
     // Vérifier si le mot contient la combinaison actuelle

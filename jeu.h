@@ -20,7 +20,7 @@ extern char motsUtilises[MAX_MOTS][50];
 extern int nbMotsUtilises;
 
 void genererCombinaison();
-int motEstValide(const char* mot);
+int motEstValide(char* mot);
 void ajouterMot(const char* mot);
 int checkMot(char* saisie);
 void convertir_en_majuscules(char *chaine);
