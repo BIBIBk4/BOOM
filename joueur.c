@@ -53,7 +53,7 @@ void pseudoValide(int sig) {
 // Gestionnaire de signal pour SIG_PSEUDOINVALIDE
 void pseudoInvalide(int sig) {
     printf("Pseudo invalide !\n");
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), demanderPseudo());
+    envoyerMessage(msgget(ftok(FICHIER, 1), 0666), demanderPseudo());
 }
 
 // Gestionnaire de signal pour SIG_MOTVALIDE

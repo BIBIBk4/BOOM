@@ -83,9 +83,16 @@ int main() {
         
         if (!joueur_existe) {
             ajouter_joueur(message.corps.pid, message.corps.msg);
-            envoyer_signal(message.corps.pid, SIG_PSEUDOVALIDE);
         } else {
             envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE); 
+        }
+
+        if (nb_joueurs >= 2) {
+            for (int i = 0; i < nb_joueurs; i++) {
+                if (!joueurs[i].estPret) {
+                    envoyer_signal(joueurs[i].pid, SIG_PSEUDOVALIDE); 
+                }
+            }
         }
         
 
@@ -97,14 +104,6 @@ int main() {
                     break;
                 }
             }
-
-            if (nb_joueurs >= 2) {
-                for (int i = 0; i < nb_joueurs; i++) {
-                    if (!joueurs[i].estPret) {
-                        envoyer_signal(joueurs[i].pid, SIG_PSEUDOVALIDE); 
-                    }
-                }
-            }
             
 
             if (tous_pret()) {
@@ -112,8 +111,8 @@ int main() {
                 printf("---------------------------------------------\n");
                 break;
             }
+            continue;
         }
-        continue;
     }
 
     msgctl(idFile, IPC_RMID, NULL);
