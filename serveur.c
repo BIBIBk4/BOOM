@@ -1,39 +1,122 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
+#include <string.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
-#include <string.h>
+#include <sys/types.h>
 #include <signal.h>
+#include <unistd.h>
+#include <stdbool.h>
 #include "variables.h"
 
+#define MAX_JOUEURS 10
 
+t_joueur joueurs[MAX_JOUEURS]; 
+int nb_joueurs = 0;         
+
+void ajouter_joueur(pid_t pid, const char *pseudo) {
+    if (nb_joueurs < MAX_JOUEURS) {
+        joueurs[nb_joueurs].pid = pid;
+        strncpy(joueurs[nb_joueurs].pseudo, pseudo, sizeof(joueurs[nb_joueurs].pseudo) - 1);
+        joueurs[nb_joueurs].estPret = false;
+        nb_joueurs++;
+        printf("Joueur ajouté : %s (PID: %d)\n", pseudo, pid);
+    } else {
+        printf("Nombre maximum de joueurs atteint.\n");
+    }
+}
+
+void envoyer_signal(pid_t pid, int signal) {
+    if (kill(pid, signal) == -1) {
+        perror("Erreur lors de l'envoi du signal");
+    }
+}
+
+void envoyer_message_a_tous(const char *message) {
+    for (int i = 0; i < nb_joueurs; i++) {
+        printf("Envoi du message à %s (PID: %d) : %s\n", joueurs[i].pseudo, joueurs[i].pid, message);
+        envoyer_signal(joueurs[i].pid, SIG_PSEUDOVALIDE);
+    }
+}
+
+// Vérifie si tous les joueurs sont prêts
+bool tous_pret() {
+    for (int i = 0; i < nb_joueurs; i++) {
+        if (!joueurs[i].estPret) {
+            return false;
+        }
+    }
+    return true;
+}
 
 int main() {
-    key_t cle = ftok("./dictionnaire.txt", 1);
-    int idFile = msgget(cle, 0666 | IPC_CREAT);
+    key_t cle = ftok("./dictionnaire.txt", 1); 
+    if (cle == -1) {
+        perror("Erreur lors de la création de la clé");
+        return 1;
+    }
 
-    if(idFile == -1) {
+    int idFile = msgget(cle, 0666 | IPC_CREAT);
+    if (idFile == -1) {
         perror("Erreur lors de la récupération de la file de messages");
         return 1;
     }
 
-    // reçois les messages et les affiches
-    while(1) {
-        t_message message;
-        if (msgrcv(idFile, &message, sizeof(t_corps), 1, 0) == -1) {
-            perror("Erreur lors de la réception du message");
-            return 1;
-        }
-        printf("Message reçu : %s\n", message.corps.msg);
+    printf("Serveur démarré. En attente de joueurs...\n");
 
-        // Envoyer un signal au processus du joueur
-        if (strcmp(message.corps.msg, "SIGUSR1") == 0) {
-            kill(message.corps.pid, SIGUSR1);
-        } else if (strcmp(message.corps.msg, "SIGUSR2") == 0) {
-            kill(message.corps.pid, SIGUSR2);
+    while (1) {
+        t_message message;
+
+        if (msgrcv(idFile, &message, sizeof(message.corps), 1, 0) == -1) {
+            perror("Erreur lors de la réception du message");
+            continue;
         }
+
+        bool joueur_existe = false;
+
+        for (int i = 0; i < nb_joueurs; i++) {
+            if (joueurs[i].pid == message.corps.pid || strcmp(joueurs[i].pseudo, message.corps.msg) == 0) {
+                joueur_existe = true;
+                break;
+            }
+        }
+        
+        if (!joueur_existe) {
+            ajouter_joueur(message.corps.pid, message.corps.msg);
+            envoyer_signal(message.corps.pid, SIG_PSEUDOVALIDE);
+        } else {
+            envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE); 
+        }
+        
+
+        if (strcmp(message.corps.msg, "PRET") == 0) {
+            for (int i = 0; i < nb_joueurs; i++) {
+                if (joueurs[i].pid == message.corps.pid) {
+                    joueurs[i].estPret = true;
+                    printf("%s (PID: %d) est prêt.\n", joueurs[i].pseudo, joueurs[i].pid);
+                    break;
+                }
+            }
+
+            if (nb_joueurs >= 2) {
+                for (int i = 0; i < nb_joueurs; i++) {
+                    if (!joueurs[i].estPret) {
+                        envoyer_signal(joueurs[i].pid, SIG_PSEUDOVALIDE); 
+                    }
+                }
+            }
+            
+
+            if (tous_pret()) {
+                printf("Tous les joueurs sont prêts. La partie commence !\n");
+                printf("---------------------------------------------\n");
+                break;
+            }
+        }
+        continue;
     }
+
+    msgctl(idFile, IPC_RMID, NULL);
 
     return 0;
 }

@@ -42,16 +42,18 @@ void demanderPret() {
 // Gestionnaire de signal pour SIG_PSEUDOVALIDE
 void pseudoValide(int sig) {
     printf("Pseudo valide !\n");
-    while(getchar() != 'a');
-    printf("Envoi du message PRET\n");
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), IPC_EXCL), "PRET");
-    printf("En attente des autres joueurs...\n");
+    printf("Tapez PRET pour commencer : ");
+    char input[10];
+    scanf("%s", input);
+    if (strcmp(input, "PRET") == 0) {
+        envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), "PRET");
+    }
 }
 
 // Gestionnaire de signal pour SIG_PSEUDOINVALIDE
 void pseudoInvalide(int sig) {
     printf("Pseudo invalide !\n");
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), IPC_EXCL), demanderPseudo());
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), demanderPseudo());
 }
 
 // Gestionnaire de signal pour SIG_MOTVALIDE
@@ -63,14 +65,14 @@ void motValide(int sig) {
 // Gestionnaire de signal pour SIG_MOTINVALIDE
 void motInvalide(int sig) {
     printf("Mot entré invalide ! \n");
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), IPC_EXCL), demanderReponse());
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), demanderReponse());
     // Ajoutez ici le code de la fonction à exécuter
 }
 
 // Gestionnaire de signal pour SIG_ATONTOUR
 void aTonTour(int sig) {
     printf("C'est à votre tour de jouer !\n");
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), IPC_EXCL), demanderReponse());
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), demanderReponse());
 }
 
 // Gestionnaire de signal pour SIG_PERTEVIE
@@ -136,8 +138,8 @@ int main() {
         exit(1);
     }
 
-    key_t cle = ftok("./dictionnaire.txt", 1);
-    int idFile = msgget(cle, IPC_EXCL);
+    key_t cle = ftok(FICHIER, 1);
+    int idFile = msgget(cle, 0666);
 
     if(idFile == -1) {
         perror("Erreur lors de la récupération de la file de messages");
@@ -148,7 +150,7 @@ int main() {
 
     while (1) {
         pause();
-    }
+    }    
 
     return 0;
 }
