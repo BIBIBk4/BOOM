@@ -13,7 +13,7 @@
 // Prototypes des fonctions
 void demanderEtEnvoyerPseudo(int fileId);
 char *demanderReponse();
-void envoyerMessage(int fileId, char *message);
+void envoyerMessage(int fileId, char *message, int type);
 void demanderPret();
 
 // Gestionnaires de signaux

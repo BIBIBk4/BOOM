@@ -8,6 +8,7 @@ void demanderEtEnvoyerPseudo(int fileId) {
     scanf("%s", pseudo);
     
 <<<<<<< HEAD
+<<<<<<< HEAD
     // Envoi du message formaté
     envoyerMessage(fileId, pseudo,0);
 =======
@@ -18,6 +19,10 @@ void demanderEtEnvoyerPseudo(int fileId) {
     // Envoi du message formaté
     envoyerMessage(fileId, message);
 >>>>>>> 0ca038d (ajout types messages joueur)
+=======
+    // Envoi du message formaté
+    envoyerMessage(fileId, pseudo,0);
+>>>>>>> 8e8d0e2da7761388e1ba3947c9d7dacad20ba084
 }
 
 char *demanderReponse() {
@@ -54,6 +59,7 @@ void pseudoValide(int sig) {
     printf("Pseudo valide !\n");
     demanderPret();
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), "prt");
 >>>>>>> 0ca038d (ajout types messages joueur)
@@ -65,6 +71,8 @@ void pseudoValide(int sig) {
     } 
     
     envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), "PRET");
+=======
+>>>>>>> 8e8d0e2da7761388e1ba3947c9d7dacad20ba084
 }
 
 // Gestionnaire de signal pour SIG_PSEUDOINVALIDE
