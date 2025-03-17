@@ -84,7 +84,23 @@ int main() {
         if (!joueur_existe) {
             ajouter_joueur(message.corps.pid, message.corps.msg);
         } else {
-            envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE); 
+            if (strcmp(message.corps.msg, "PRET") == 0) {
+                for (int i = 0; i < nb_joueurs; i++) {
+                    if (joueurs[i].pid == message.corps.pid) {
+                        joueurs[i].estPret = true;
+                        printf("%s (PID: %d) est prêt.\n", joueurs[i].pseudo, joueurs[i].pid);
+                        break;
+                    }
+                }
+                
+    
+                if (tous_pret()) {
+                    printf("Tous les joueurs sont prêts. La partie commence !\n");
+                    printf("---------------------------------------------\n");
+                    break;
+                }
+            }
+            // envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE); 
         }
 
         if (nb_joueurs >= 2) {
@@ -96,23 +112,7 @@ int main() {
         }
         
 
-        if (strcmp(message.corps.msg, "PRET") == 0) {
-            for (int i = 0; i < nb_joueurs; i++) {
-                if (joueurs[i].pid == message.corps.pid) {
-                    joueurs[i].estPret = true;
-                    printf("%s (PID: %d) est prêt.\n", joueurs[i].pseudo, joueurs[i].pid);
-                    break;
-                }
-            }
-            
-
-            if (tous_pret()) {
-                printf("Tous les joueurs sont prêts. La partie commence !\n");
-                printf("---------------------------------------------\n");
-                break;
-            }
-            jeu();
-        }
+        
     }
 
     msgctl(idFile, IPC_RMID, NULL);
