@@ -3,8 +3,9 @@
 #include <time.h>
 #include <string.h>
 #include "jeu.h"
+#include "partie.h"
 
-int main() {
+int jeu() {
     // Initialisation
     srand(time(NULL));
     printf("Bienvenue dans le jeu Tik Tak Boum dans ton Ben !\n\n");
