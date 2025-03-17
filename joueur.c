@@ -1,17 +1,17 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include <string.h>
-#include <signal.h>
+#include "joueur.h"
 #include "variables.h"
 
-char *demanderPseudo() {
-    char *pseudo = malloc(50 * sizeof(char));
-    printf("Entrez votre pseudo : ");
+void demanderEtEnvoyerPseudo(int fileId) {
+    char pseudo[50];
+    printf("Veuillez entrer votre pseudo : ");
     scanf("%s", pseudo);
-    return pseudo;
+    
+    // Préparation du message au format "psd:Pseudo"
+    char message[100];
+    sprintf(message, "psd:%s", pseudo);
+    
+    // Envoi du message formaté
+    envoyerMessage(fileId, message);
 }
 
 char *demanderReponse() {
@@ -42,18 +42,14 @@ void demanderPret() {
 // Gestionnaire de signal pour SIG_PSEUDOVALIDE
 void pseudoValide(int sig) {
     printf("Pseudo valide !\n");
-    printf("Tapez PRET pour commencer : ");
-    char input[10];
-    scanf("%s", input);
-    if (strcmp(input, "PRET") == 0) {
-        envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), "PRET");
-    }
+    demanderPret();
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), "prt");
 }
 
 // Gestionnaire de signal pour SIG_PSEUDOINVALIDE
 void pseudoInvalide(int sig) {
     printf("Pseudo invalide !\n");
-    envoyerMessage(msgget(ftok(FICHIER, 1), 0666), demanderPseudo());
+    demanderEtEnvoyerPseudo(msgget(ftok(FICHIER, 1), 0666));
 }
 
 // Gestionnaire de signal pour SIG_MOTVALIDE
@@ -146,7 +142,7 @@ int main() {
         return 1;
     }
 
-    envoyerMessage(idFile, demanderPseudo());
+    demanderEtEnvoyerPseudo(idFile);
 
     while (1) {
         pause();
