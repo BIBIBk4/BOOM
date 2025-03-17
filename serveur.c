@@ -91,7 +91,15 @@ int main() {
                     envoyer_signal(message.corps.pid, SIG_PSEUDOVALIDE);
                 }
                 break;
-            case 1:
+            }
+        }
+        
+        if (!joueur_existe) {
+            ajouter_joueur(message.corps.pid, message.corps.msg);
+        }else if(joueur_existe){
+            envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE);
+        } else {
+            if (strcmp(message.corps.msg, "PRET") == 0) {
                 for (int i = 0; i < nb_joueurs; i++) {
                     if (joueurs[i].pid == message.corps.pid) {
                         joueurs[i].estPret = true;
@@ -106,13 +114,18 @@ int main() {
                     printf("---------------------------------------------\n");
                     break;
                 }
-                break;
-            case 2:
-                printf("Message reçu de %d : %s, type : %d\n", message.corps.pid, message.corps.msg, message.corps.type);
-                break;
-            default:
-                printf("Type de message inconnu\n");
-                break;
+            }
+        }
+
+        if (nb_joueurs >= 2) {
+            for (int i = 0; i < nb_joueurs; i++) {
+                if (!joueurs[i].estPret) {
+                    envoyer_signal(joueurs[i].pid, SIG_PSEUDOVALIDE); 
+                }
+            }
+        }
+        
+
         
         }
     }
