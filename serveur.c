@@ -41,6 +41,9 @@ void envoyer_message_a_tous(const char *message) {
 
 // Vérifie si tous les joueurs sont prêts
 bool tous_pret() {
+    if(nb_joueurs < 2) {
+        return false;
+    }
     for (int i = 0; i < nb_joueurs; i++) {
         if (!joueurs[i].estPret) {
             return false;
@@ -72,11 +75,21 @@ int main() {
             continue;
         }
 
-        bool joueur_existe = false;
+        switch (message.corps.type) {
+            case 0:
+                bool joueur_existe = false;
 
-        for (int i = 0; i < nb_joueurs; i++) {
-            if (joueurs[i].pid == message.corps.pid || strcmp(joueurs[i].pseudo, message.corps.msg) == 0) {
-                joueur_existe = true;
+                for (int i = 0; i < nb_joueurs; i++) {
+                    if (joueurs[i].pid == message.corps.pid || strcmp(joueurs[i].pseudo, message.corps.msg) == 0) {
+                        joueur_existe = true;
+                        break;
+                    }
+                }
+
+                if (!joueur_existe) {
+                    ajouter_joueur(message.corps.pid, message.corps.msg);
+                    envoyer_signal(message.corps.pid, SIG_PSEUDOVALIDE);
+                }
                 break;
             }
         }
@@ -84,7 +97,23 @@ int main() {
         if (!joueur_existe) {
             ajouter_joueur(message.corps.pid, message.corps.msg);
         } else {
-            envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE); 
+            if (strcmp(message.corps.msg, "PRET") == 0) {
+                for (int i = 0; i < nb_joueurs; i++) {
+                    if (joueurs[i].pid == message.corps.pid) {
+                        joueurs[i].estPret = true;
+                        printf("%s (PID: %d) est prêt.\n", joueurs[i].pseudo, joueurs[i].pid);
+                        break;
+                    }
+                }
+                
+    
+                if (tous_pret()) {
+                    printf("Tous les joueurs sont prêts. La partie commence !\n");
+                    printf("---------------------------------------------\n");
+                    break;
+                }
+            }
+            // envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE); 
         }
 
         if (nb_joueurs >= 2) {
@@ -96,6 +125,7 @@ int main() {
         }
         
 
+<<<<<<< HEAD
         if (strcmp(message.corps.msg, "PRET") == 0) {
             for (int i = 0; i < nb_joueurs; i++) {
                 if (joueurs[i].pid == message.corps.pid) {
@@ -111,6 +141,9 @@ int main() {
                 printf("---------------------------------------------\n");
                 break;
             }
+=======
+        
+>>>>>>> e3cfb820064d5026f7bf68898f29b0ce536dc6df
         }
     }
 
