@@ -39,9 +39,8 @@ void envoyer_message_a_tous(const char *message) {
     }
 }
 
-// Vérifie si tous les joueurs sont prêts
 bool tous_pret() {
-    if(nb_joueurs < 2) {
+    if (nb_joueurs < 2) {
         return false;
     }
     for (int i = 0; i < nb_joueurs; i++) {
@@ -51,6 +50,23 @@ bool tous_pret() {
     }
     return true;
 }
+
+void envoyer_tableau_joueurs(int idFile) {
+    for (int i = 0; i < nb_joueurs; i++) {
+        t_message_joueurs msg;
+        msg.type = joueurs[i].pid;
+        msg.nb_joueurs = nb_joueurs;
+        memcpy(msg.joueurs, joueurs, sizeof(joueurs));
+
+        if (msgsnd(idFile, &msg, sizeof(msg) - sizeof(long), 0) == -1) {
+            perror("Erreur lors de l'envoi du tableau des joueurs");
+        } else {
+            printf("Tableau envoyé à %s (PID: %d)\n", joueurs[i].pseudo, joueurs[i].pid);
+        }
+    }
+}
+
+
 
 int main() {
     key_t cle = ftok("./dictionnaire.txt", 1); 
@@ -65,6 +81,8 @@ int main() {
         return 1;
     }
 
+    bool partieCommence = false;
+
     printf("Serveur démarré. En attente de joueurs...\n");
 
     while (1) {
@@ -76,7 +94,12 @@ int main() {
         }
 
         switch (message.corps.type) {
-            case 0:
+            case 0: {
+                if (partieCommence) {
+                    printf("Connexion refusée : la partie a déjà commencé. Joueur (PID: %d) tué.\n", message.corps.pid);
+                    kill(message.corps.pid, SIGKILL);
+                    break;
+                }
                 bool joueur_existe = false;
 
                 for (int i = 0; i < nb_joueurs; i++) {
@@ -89,70 +112,49 @@ int main() {
                 if (!joueur_existe) {
                     ajouter_joueur(message.corps.pid, message.corps.msg);
                     envoyer_signal(message.corps.pid, SIG_PSEUDOVALIDE);
+                } else {
+                    envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE);
                 }
                 break;
-            case 1:
+            }
+
+            case 1: {
                 for (int i = 0; i < nb_joueurs; i++) {
                     if (joueurs[i].pid == message.corps.pid) {
                         joueurs[i].estPret = true;
+                        joueurs[i].enVie = true;
                         printf("%s (PID: %d) est prêt.\n", joueurs[i].pseudo, joueurs[i].pid);
                         break;
                     }
                 }
-                
-    
+
                 if (tous_pret()) {
                     printf("Tous les joueurs sont prêts. La partie commence !\n");
                     printf("---------------------------------------------\n");
-                    break;
+                    partieCommence = true;
+                    envoyer_tableau_joueurs(idFile);
+                } else {
+                    if (nb_joueurs >= 2) {
+                        for (int i = 0; i < nb_joueurs; i++) {
+                            if (!joueurs[i].estPret) {
+                                envoyer_signal(joueurs[i].pid, SIG_PSEUDOVALIDE); 
+                            }
+                        }
+                    }
                 }
-<<<<<<< HEAD
-            }
-            // envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE); 
-        }
-
-        if (nb_joueurs >= 2) {
-            for (int i = 0; i < nb_joueurs; i++) {
-                if (!joueurs[i].estPret) {
-                    envoyer_signal(joueurs[i].pid, SIG_PSEUDOVALIDE); 
-                }
-            }
-        }
-        
-
-<<<<<<< HEAD
-        if (strcmp(message.corps.msg, "PRET") == 0) {
-            for (int i = 0; i < nb_joueurs; i++) {
-                if (joueurs[i].pid == message.corps.pid) {
-                    joueurs[i].estPret = true;
-                    printf("%s (PID: %d) est prêt.\n", joueurs[i].pseudo, joueurs[i].pid);
-                    break;
-                }
-            }
-            
-
-            if (tous_pret()) {
-                printf("Tous les joueurs sont prêts. La partie commence !\n");
-                printf("---------------------------------------------\n");
                 break;
             }
-=======
-        
->>>>>>> e3cfb820064d5026f7bf68898f29b0ce536dc6df
-=======
-                break;
+
             case 2:
                 printf("Message reçu de %d : %s, type : %d\n", message.corps.pid, message.corps.msg, message.corps.type);
                 break;
+
             default:
                 printf("Type de message inconnu\n");
                 break;
-        
->>>>>>> 8e8d0e2da7761388e1ba3947c9d7dacad20ba084
         }
     }
 
     msgctl(idFile, IPC_RMID, NULL);
-
     return 0;
 }

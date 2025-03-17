@@ -1,5 +1,7 @@
 #include "joueur.h"
 #include "variables.h"
+#include <stdlib.h>
+#include <errno.h>
 #include <stdio.h>
 
 void demanderEtEnvoyerPseudo(int fileId) {
@@ -7,22 +9,8 @@ void demanderEtEnvoyerPseudo(int fileId) {
     printf("Veuillez entrer votre pseudo : ");
     scanf("%s", pseudo);
     
-<<<<<<< HEAD
-<<<<<<< HEAD
     // Envoi du message formaté
     envoyerMessage(fileId, pseudo,0);
-=======
-    // Préparation du message au format "psd:Pseudo"
-    char message[100];
-    sprintf(message, "psd:%s", pseudo);
-    
-    // Envoi du message formaté
-    envoyerMessage(fileId, message);
->>>>>>> 0ca038d (ajout types messages joueur)
-=======
-    // Envoi du message formaté
-    envoyerMessage(fileId, pseudo,0);
->>>>>>> 8e8d0e2da7761388e1ba3947c9d7dacad20ba084
 }
 
 char *demanderReponse() {
@@ -58,21 +46,6 @@ void demanderPret() {
 void pseudoValide(int sig) {
     printf("Pseudo valide !\n");
     demanderPret();
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), "prt");
->>>>>>> 0ca038d (ajout types messages joueur)
-    
-    char input[10];
-    while (strcmp(input, "PRET") != 0) {
-        printf("Tapez PRET pour commencer : ");
-        scanf("%s", input);
-    } 
-    
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), "PRET");
-=======
->>>>>>> 8e8d0e2da7761388e1ba3947c9d7dacad20ba084
 }
 
 // Gestionnaire de signal pour SIG_PSEUDOINVALIDE
@@ -104,6 +77,31 @@ void aTonTour(int sig) {
 void perdu(int sig) {
     printf("Vous avez perdu !\n");
 }
+
+void recevoir_tableau_joueurs(int idFile, pid_t monPid) {
+    t_message_joueurs msg;
+    ssize_t res;
+
+    do {
+        res = msgrcv(idFile, &msg, sizeof(msg) - sizeof(long), monPid, 0);
+    } while (res == -1 && errno == EINTR); // Relance en cas d'interruption
+
+    if (res == -1) {
+        perror("Erreur lors de la réception du tableau");
+    } else {
+        printf("\nTableau des joueurs reçu :\n");
+        printf("+-----------------+--------+\n");
+        printf("| Pseudo          | En Vie |\n");
+        printf("+-----------------+--------+\n");
+
+        for (int i = 0; i < msg.nb_joueurs; i++) {
+            printf("| %-15s |   %s   |\n", msg.joueurs[i].pseudo, msg.joueurs[i].enVie ? "En Vie" : "Mort");
+        }
+
+        printf("+-----------------+--------+\n");
+    }
+}
+
 
 int main() {
     // Enregistrement des gestionnaires de signaux
@@ -172,6 +170,8 @@ int main() {
     }
 
     demanderEtEnvoyerPseudo(idFile);
+
+    recevoir_tableau_joueurs(idFile, getpid());
 
     while (1) {
         pause();

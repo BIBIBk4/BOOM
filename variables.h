@@ -12,6 +12,8 @@
 
 #define FICHIER "./dictionnaire.txt"
 
+#define MAX_JOUEURS 10
+
 /* Corps des messages qui transitent, utilisé par le joueur et le jeu */
 typedef struct corps {
     pid_t pid; 
@@ -28,5 +30,12 @@ typedef struct {
     pid_t pid;
     bool estPret;
     char pseudo[50];
+    bool enVie;
 } t_joueur;
+
+typedef struct {
+    long type;
+    t_joueur joueurs[MAX_JOUEURS];
+    int nb_joueurs;
+} t_message_joueurs;
 
