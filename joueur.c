@@ -1,17 +1,14 @@
 #include "joueur.h"
 #include "variables.h"
+#include <stdio.h>
 
 void demanderEtEnvoyerPseudo(int fileId) {
     char pseudo[50];
     printf("Veuillez entrer votre pseudo : ");
     scanf("%s", pseudo);
     
-    // Préparation du message au format "psd:Pseudo"
-    char message[100];
-    sprintf(message, "psd:%s", pseudo);
-    
     // Envoi du message formaté
-    envoyerMessage(fileId, message);
+    envoyerMessage(fileId, pseudo,0);
 }
 
 char *demanderReponse() {
@@ -21,11 +18,11 @@ char *demanderReponse() {
     return reponse;
 }
 
-void envoyerMessage(int bol, char *reponse) {
+void envoyerMessage(int bol, char *reponse, int type) {
     t_message message;
     message.type = 1;
     message.corps.pid = getpid();
-    printf("pid : %d\n", message.corps.pid);
+    message.corps.type = type;
     strcpy(message.corps.msg, reponse);
 
     if (msgsnd(bol, &message, sizeof(t_corps), 0) == -1) {
@@ -35,15 +32,18 @@ void envoyerMessage(int bol, char *reponse) {
 }
 
 void demanderPret() {
-    printf("Appuyez sur une touche lorsque vous êtes prêt\n");
-    getchar();
+    char reponse[10];
+    while(strcmp(reponse, "PRET") != 0) {
+        printf("\nVeuillez entrer 'PRET' pour indiquer que vous êtes prêt : ");
+        scanf("%s", reponse);
+    }
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), "prt",1);
 }
 
 // Gestionnaire de signal pour SIG_PSEUDOVALIDE
 void pseudoValide(int sig) {
     printf("Pseudo valide !\n");
     demanderPret();
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), "prt");
 }
 
 // Gestionnaire de signal pour SIG_PSEUDOINVALIDE
@@ -61,14 +61,14 @@ void motValide(int sig) {
 // Gestionnaire de signal pour SIG_MOTINVALIDE
 void motInvalide(int sig) {
     printf("Mot entré invalide ! \n");
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), demanderReponse());
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), demanderReponse(),2);
     // Ajoutez ici le code de la fonction à exécuter
 }
 
 // Gestionnaire de signal pour SIG_ATONTOUR
 void aTonTour(int sig) {
     printf("C'est à votre tour de jouer !\n");
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), demanderReponse());
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), demanderReponse(),2);
 }
 
 // Gestionnaire de signal pour SIG_PERTEVIE
