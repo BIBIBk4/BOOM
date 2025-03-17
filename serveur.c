@@ -41,6 +41,9 @@ void envoyer_message_a_tous(const char *message) {
 
 // Vérifie si tous les joueurs sont prêts
 bool tous_pret() {
+    if(nb_joueurs < 2) {
+        return false;
+    }
     for (int i = 0; i < nb_joueurs; i++) {
         if (!joueurs[i].estPret) {
             return false;
@@ -72,19 +75,23 @@ int main() {
             continue;
         }
 
-        bool joueur_existe = false;
+        switch (message.corps.type) {
+            case 0:
+                bool joueur_existe = false;
 
-        for (int i = 0; i < nb_joueurs; i++) {
-            if (joueurs[i].pid == message.corps.pid || strcmp(joueurs[i].pseudo, message.corps.msg) == 0) {
-                joueur_existe = true;
+                for (int i = 0; i < nb_joueurs; i++) {
+                    if (joueurs[i].pid == message.corps.pid || strcmp(joueurs[i].pseudo, message.corps.msg) == 0) {
+                        joueur_existe = true;
+                        break;
+                    }
+                }
+
+                if (!joueur_existe) {
+                    ajouter_joueur(message.corps.pid, message.corps.msg);
+                    envoyer_signal(message.corps.pid, SIG_PSEUDOVALIDE);
+                }
                 break;
-            }
-        }
-        
-        if (!joueur_existe) {
-            ajouter_joueur(message.corps.pid, message.corps.msg);
-        } else {
-            if (strcmp(message.corps.msg, "PRET") == 0) {
+            case 1:
                 for (int i = 0; i < nb_joueurs; i++) {
                     if (joueurs[i].pid == message.corps.pid) {
                         joueurs[i].estPret = true;
@@ -99,20 +106,15 @@ int main() {
                     printf("---------------------------------------------\n");
                     break;
                 }
-            }
-            // envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE); 
-        }
-
-        if (nb_joueurs >= 2) {
-            for (int i = 0; i < nb_joueurs; i++) {
-                if (!joueurs[i].estPret) {
-                    envoyer_signal(joueurs[i].pid, SIG_PSEUDOVALIDE); 
-                }
-            }
-        }
+                break;
+            case 2:
+                printf("Message reçu de %d : %s, type : %d\n", message.corps.pid, message.corps.msg, message.corps.type);
+                break;
+            default:
+                printf("Type de message inconnu\n");
+                break;
         
-
-        
+        }
     }
 
     msgctl(idFile, IPC_RMID, NULL);

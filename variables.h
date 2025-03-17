@@ -16,6 +16,7 @@
 typedef struct corps {
     pid_t pid; 
     char msg[256];
+    int type;
 } t_corps;
 
 typedef struct {
