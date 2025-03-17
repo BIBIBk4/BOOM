@@ -83,8 +83,6 @@ int main() {
         
         if (!joueur_existe) {
             ajouter_joueur(message.corps.pid, message.corps.msg);
-        }else if(joueur_existe){
-            envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE);
         } else {
             if (strcmp(message.corps.msg, "PRET") == 0) {
                 for (int i = 0; i < nb_joueurs; i++) {
@@ -102,6 +100,7 @@ int main() {
                     break;
                 }
             }
+            // envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE); 
         }
 
         if (nb_joueurs >= 2) {
