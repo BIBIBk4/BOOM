@@ -13,7 +13,11 @@
 // Prototypes des fonctions
 void demanderEtEnvoyerPseudo(int fileId);
 char *demanderReponse();
+<<<<<<< HEAD
 void envoyerMessage(int fileId, char *message, int type);
+=======
+void envoyerMessage(int fileId, char *message);
+>>>>>>> 0ca038d (ajout types messages joueur)
 void demanderPret();
 
 // Gestionnaires de signaux
