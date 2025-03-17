@@ -5,7 +5,7 @@
 #include "jeu.h"
 #include "partie.h"
 
-int jeu() {
+void jeu() {
     // Initialisation
     srand(time(NULL));
     printf("Bienvenue dans le jeu Tik Tak Boum dans ton Ben !\n\n");
@@ -39,6 +39,4 @@ int jeu() {
             printf("%s\n", motsUtilises[i]);
         }
     }
-
-    return 0;
 }

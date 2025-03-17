@@ -1,1 +1,1 @@
-int jeu();
+void jeu();

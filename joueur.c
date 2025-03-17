@@ -42,12 +42,14 @@ void demanderPret() {
 // Gestionnaire de signal pour SIG_PSEUDOVALIDE
 void pseudoValide(int sig) {
     printf("Pseudo valide !\n");
-    printf("Tapez PRET pour commencer : ");
+    
     char input[10];
-    scanf("%s", input);
-    if (strcmp(input, "PRET") == 0) {
-        envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), "PRET");
-    }
+    while (strcmp(input, "PRET") != 0) {
+        printf("Tapez PRET pour commencer : ");
+        scanf("%s", input);
+    } 
+    
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), "PRET");
 }
 
 // Gestionnaire de signal pour SIG_PSEUDOINVALIDE
