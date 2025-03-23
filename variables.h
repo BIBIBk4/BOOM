@@ -9,6 +9,7 @@
 #define SIG_ATONTOUR SIGPWR
 #define SIG_PSEUDOVALIDE SIGCONT
 #define SIG_PSEUDOINVALIDE SIGRTMIN+1
+#define SIG_LISTEJOUEURS SIGTSTP
 
 #define FICHIER "./dictionnaire.txt"
 
@@ -26,7 +27,8 @@ typedef struct {
 
 typedef struct {
     pid_t pid;
-    bool estPret;
+    bool vivant;
     char pseudo[50];
+    bool tour;
 } t_joueur;
 

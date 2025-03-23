@@ -2,6 +2,10 @@
 #include "variables.h"
 #include <stdio.h>
 
+void clearScreen() {
+    printf("\033[H\033[J");
+}
+
 void demanderEtEnvoyerPseudo(int fileId) {
     char pseudo[50];
     printf("Veuillez entrer votre pseudo : ");
@@ -40,6 +44,44 @@ void demanderPret() {
     envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), "prt",1);
 }
 
+
+void afficherListeJoueurs(const char *liste) {
+    clearScreen();
+    printf("   Joueur                État\n");
+    printf("   ----------------------------\n");
+
+    char *listeCopy = strdup(liste);
+    char *ligne = strtok(listeCopy, "\n");
+
+    while (ligne != NULL) {
+        char pseudo[50];
+        int vivant;
+        int tour;
+        sscanf(ligne, "%[^:]:%d:%d", pseudo, &vivant, &tour);
+        printf("%s %-20s %s\n", tour ? "->" : "  ", pseudo, vivant ? "vivant" : "mort");
+        ligne = strtok(NULL, "\n");
+    }
+
+    free(listeCopy);
+}
+
+// Gestionnaire de signal pour SIG_LISTEJOUEURS
+void recevoirListeJoueurs(int sig) {
+    t_message message;
+    int idFile = msgget(ftok(FICHIER, 1), 0666);
+    if (idFile == -1) {
+        perror("Erreur lors de la récupération de la file de messages");
+        return;
+    }
+
+    pid_t pid = getpid();
+    if (msgrcv(idFile, &message, sizeof(message.corps), pid, 0) == -1) {
+        perror("Erreur lors de la réception de la liste des joueurs");
+        return;
+    }
+    afficherListeJoueurs(message.corps.msg);
+}
+
 // Gestionnaire de signal pour SIG_PSEUDOVALIDE
 void pseudoValide(int sig) {
     printf("Pseudo valide !\n");
@@ -55,12 +97,11 @@ void pseudoInvalide(int sig) {
 // Gestionnaire de signal pour SIG_MOTVALIDE
 void motValide(int sig) {
     printf("Mot rentré valide ! Au tour du joueur suivant\n");
-    // Ajoutez ici le code de la fonction à exécuter
 }
 
 // Gestionnaire de signal pour SIG_MOTINVALIDE
 void motInvalide(int sig) {
-    printf("Mot entré invalide ! \n");
+    printf("Mot entré invalide, entrez un nouveau mot ! \n");
     envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), demanderReponse(),2);
     // Ajoutez ici le code de la fonction à exécuter
 }
@@ -68,6 +109,21 @@ void motInvalide(int sig) {
 // Gestionnaire de signal pour SIG_ATONTOUR
 void aTonTour(int sig) {
     printf("C'est à votre tour de jouer !\n");
+    t_message message;
+    int idFile = msgget(ftok(FICHIER, 1), 0666);
+    if (idFile == -1) {
+        perror("Erreur lors de la récupération de la file de messages");
+        return;
+    }
+
+    pid_t pid = getpid();
+    if (msgrcv(idFile, &message, sizeof(message.corps), pid, 0) == -1) {
+        perror("Erreur lors de la réception de la combinaison");
+        return;
+    }
+
+    printf("\nLa combinaison est : %s\n", message.corps.msg);
+
     envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), demanderReponse(),2);
 }
 
@@ -78,7 +134,7 @@ void perdu(int sig) {
 
 int main() {
     // Enregistrement des gestionnaires de signaux
-    struct sigaction sigMotValide, sigMotinValide, sigPerdu, sigATonTour, sigPseudoValide, sigPseudoInvalide;
+    struct sigaction sigMotValide, sigMotinValide, sigPerdu, sigATonTour, sigPseudoValide, sigPseudoInvalide, sigListeJoueurs;
 
     sigMotValide.sa_handler = motValide;
     sigemptyset(&sigMotValide.sa_mask);
@@ -103,6 +159,10 @@ int main() {
     sigPseudoInvalide.sa_handler = pseudoInvalide;
     sigemptyset(&sigPseudoInvalide.sa_mask);
     sigPseudoInvalide.sa_flags = 0;
+
+    sigListeJoueurs.sa_handler = recevoirListeJoueurs;
+    sigemptyset(&sigListeJoueurs.sa_mask);
+    sigListeJoueurs.sa_flags = 0;
 
     if (sigaction(SIG_MOTVALIDE, &sigMotValide, NULL) == -1) {
         perror("Erreur lors de l'enregistrement du gestionnaire de SIGUSR1");
@@ -131,6 +191,11 @@ int main() {
 
     if (sigaction(SIG_PSEUDOINVALIDE, &sigPseudoInvalide, NULL) == -1) {
         perror("Erreur lors de l'enregistrement du gestionnaire de SIGPSEUDOINVALIDE");
+        exit(1);
+    }
+
+    if (sigaction(SIG_LISTEJOUEURS, &sigListeJoueurs, NULL) == -1) {
+        perror("Erreur lors de l'enregistrement du gestionnaire de SIGLISTEJOUEURS");
         exit(1);
     }
 

@@ -6,7 +6,7 @@
 
 #define TAILLE_MAX 100
 #define MAX_MOTS 100
-#define MAX_SYLLABES 100
+#define MAX_SYLLABES 97
 #define FICHIER_DICTIONNAIRE "dictionnaire.txt"
 
 extern pthread_mutex_t mutexMots;
@@ -19,7 +19,7 @@ extern char combinaisonActuelle[10];
 extern char motsUtilises[MAX_MOTS][50];
 extern int nbMotsUtilises;
 
-void genererCombinaison();
+char *genererCombinaison();
 int motEstValide(char* mot);
 void ajouterMot(const char* mot);
 int checkMot(char* saisie);

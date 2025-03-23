@@ -25,14 +25,15 @@ char *syllabes[MAX_SYLLABES] = {
     "sa", "se", "si", "so", "su", "ta", "te", "ti", "to", "tu",
     "va", "ve", "vi", "vo", "vu", "za", "ze", "zi", "zo", "zu",
     "ai", "au", "ei", "eu", "ou", "ui", "an", "en", "in", "on",
-    "un", "ou", "oi", "ui", "é", "è", "ç", "ch", "gh", "qu"
+    "un", "ou", "oi", "ui", "ch", "gh", "qu"
 };
 
 // Générer une combinaison aléatoire
-void genererCombinaison() {
+char *genererCombinaison() {
     int index = rand() % MAX_SYLLABES;
     strncpy(combinaisonActuelle, syllabes[index], sizeof(combinaisonActuelle) - 1);
     combinaisonActuelle[sizeof(combinaisonActuelle) - 1] = '\0'; // Assurez-vous de la terminaison
+    return combinaisonActuelle;
 }
 
 // Vérifier si un mot est valide

@@ -7,6 +7,8 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdbool.h>
+
+#include "jeu.h"
 #include "variables.h"
 
 #define MAX_JOUEURS 10
@@ -18,7 +20,8 @@ void ajouter_joueur(pid_t pid, const char *pseudo) {
     if (nb_joueurs < MAX_JOUEURS) {
         joueurs[nb_joueurs].pid = pid;
         strncpy(joueurs[nb_joueurs].pseudo, pseudo, sizeof(joueurs[nb_joueurs].pseudo) - 1);
-        joueurs[nb_joueurs].estPret = false;
+        joueurs[nb_joueurs].vivant = false;
+        joueurs[nb_joueurs].tour = false;
         nb_joueurs++;
         printf("Joueur ajouté : %s (PID: %d)\n", pseudo, pid);
     } else {
@@ -45,14 +48,64 @@ bool tous_pret() {
         return false;
     }
     for (int i = 0; i < nb_joueurs; i++) {
-        if (!joueurs[i].estPret) {
+        if (!joueurs[i].vivant) {
             return false;
         }
     }
     return true;
 }
 
+void envoyer_message(int pid, const char *message) {
+    key_t cle = ftok("./dictionnaire.txt", 1);
+    int idFile = msgget(cle, 0666 | IPC_CREAT);
+    if (idFile == -1) {
+        perror("Erreur lors de la récupération de la file de messages");
+        return;
+    }
+
+    t_message msg;
+    msg.type = pid;
+    msg.corps.pid = getpid();
+    msg.corps.type = 0;
+    strncpy(msg.corps.msg, message, sizeof(msg.corps.msg) - 1);
+    msg.corps.msg[sizeof(msg.corps.msg) - 1] = '\0';
+
+    if (msgsnd(idFile, &msg, sizeof(msg.corps), 0) == -1) {
+        perror("Erreur lors de l'envoi du message");
+    }
+}
+
+void envoyer_liste_joueurs() {
+    char liste[MAX_JOUEURS * 80]; // Increase buffer size to accommodate longer player info
+    liste[0] = '\0';
+
+    for (int i = 0; i < nb_joueurs; i++) {
+        char joueur_info[80]; // Increase buffer size to avoid truncation
+        printf("joueur :  %s, %d, %d\n", joueurs[i].pseudo, joueurs[i].vivant, joueurs[i].tour);
+        snprintf(joueur_info, sizeof(joueur_info), "%s:%d:%d\n", joueurs[i].pseudo, joueurs[i].vivant, joueurs[i].tour);
+        strncat(liste, joueur_info, sizeof(liste) - strlen(liste) - 1);
+    }
+
+    for (int i = 0; i < nb_joueurs; i++) {
+        printf("joueur : %d, %s\n", joueurs[i].pid, joueurs[i].pseudo);
+        envoyer_signal(joueurs[i].pid, SIG_LISTEJOUEURS);
+        envoyer_message(joueurs[i].pid, liste); // Assuming type 3 for the list message
+    }
+}
+
+void lancerPartie(int tour) {
+    printf("C'est au tour de %s (PID: %d)\n", joueurs[tour].pseudo, joueurs[tour].pid);
+    joueurs[tour].tour = true;
+    envoyer_liste_joueurs();
+    sleep(2);
+    envoyer_signal(joueurs[tour].pid, SIG_ATONTOUR);
+    char combinaison[10];
+    strcpy(combinaison, genererCombinaison());
+    envoyer_message(joueurs[tour].pid, combinaison);
+}
+
 int main() {
+    int tour = 0;
     key_t cle = ftok("./dictionnaire.txt", 1); 
     if (cle == -1) {
         perror("Erreur lors de la création de la clé");
@@ -89,12 +142,14 @@ int main() {
                 if (!joueur_existe) {
                     ajouter_joueur(message.corps.pid, message.corps.msg);
                     envoyer_signal(message.corps.pid, SIG_PSEUDOVALIDE);
+                } else {
+                    envoyer_signal(message.corps.pid, SIG_PSEUDOINVALIDE);
                 }
                 break;
             case 1:
                 for (int i = 0; i < nb_joueurs; i++) {
                     if (joueurs[i].pid == message.corps.pid) {
-                        joueurs[i].estPret = true;
+                        joueurs[i].vivant = true;
                         printf("%s (PID: %d) est prêt.\n", joueurs[i].pseudo, joueurs[i].pid);
                         break;
                     }
@@ -104,11 +159,19 @@ int main() {
                 if (tous_pret()) {
                     printf("Tous les joueurs sont prêts. La partie commence !\n");
                     printf("---------------------------------------------\n");
+                    lancerPartie(tour);
                     break;
                 }
                 break;
             case 2:
-                printf("Message reçu de %d : %s, type : %d\n", message.corps.pid, message.corps.msg, message.corps.type);
+                if (motEstValide(message.corps.msg)) {
+                    envoyer_signal(message.corps.pid, SIG_MOTVALIDE);
+                    joueurs[tour].tour = false;
+                    tour = (tour + 1) % nb_joueurs;
+                    lancerPartie(tour);
+                } else {
+                    envoyer_signal(message.corps.pid, SIG_MOTINVALIDE);
+                }
                 break;
             default:
                 printf("Type de message inconnu\n");
