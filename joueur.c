@@ -2,6 +2,8 @@
 #include "variables.h"
 #include <stdio.h>
 
+bool joueur_vivant = true;
+
 void clearScreen() {
     printf("\033[H\033[J");
 }
@@ -16,6 +18,11 @@ void demanderEtEnvoyerPseudo(int fileId) {
 }
 
 char *demanderReponse() {
+    if (!joueur_vivant) {
+        printf("Vous avez perdu et ne pouvez plus entrer de mot.\n");
+        return NULL;
+    }
+
     char *reponse = malloc(50 * sizeof(char));
     printf("Entrez votre mot : ");
     scanf("%s", reponse);
@@ -102,7 +109,11 @@ void motValide(int sig) {
 // Gestionnaire de signal pour SIG_MOTINVALIDE
 void motInvalide(int sig) {
     printf("Mot entré invalide, entrez un nouveau mot ! \n");
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), demanderReponse(),2);
+    char *reponse = demanderReponse();
+    if (reponse == NULL || !joueur_vivant) {
+        return;
+    }
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), reponse,2);
     // Ajoutez ici le code de la fonction à exécuter
 }
 
@@ -124,17 +135,32 @@ void aTonTour(int sig) {
 
     printf("\nLa combinaison est : %s\n", message.corps.msg);
 
-    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), demanderReponse(),2);
+    char *reponse = demanderReponse();
+    if (reponse == NULL || !joueur_vivant) {
+        return;
+    }
+
+    envoyerMessage(msgget(ftok("./dictionnaire.txt", 1), 0666), reponse,2);
 }
 
 // Gestionnaire de signal pour SIG_PERTEVIE
 void perdu(int sig) {
-    printf("Vous avez perdu !\n");
+    printf("\nLa bombe a explosée !!\n");
+    joueur_vivant = false;
+}
+
+void gagne(int sig) {
+    printf("Félicitations, vous avez gagné !\n");
+}
+
+void finPartie(int sig) {
+    printf("La partie est terminée.\n");
+    exit(0);
 }
 
 int main() {
     // Enregistrement des gestionnaires de signaux
-    struct sigaction sigMotValide, sigMotinValide, sigPerdu, sigATonTour, sigPseudoValide, sigPseudoInvalide, sigListeJoueurs;
+    struct sigaction sigMotValide, sigMotinValide, sigPerdu, sigATonTour, sigPseudoValide, sigPseudoInvalide, sigListeJoueurs, sigGagne, sigFinPartie;
 
     sigMotValide.sa_handler = motValide;
     sigemptyset(&sigMotValide.sa_mask);
@@ -163,6 +189,14 @@ int main() {
     sigListeJoueurs.sa_handler = recevoirListeJoueurs;
     sigemptyset(&sigListeJoueurs.sa_mask);
     sigListeJoueurs.sa_flags = 0;
+
+    sigGagne.sa_handler = gagne;
+    sigemptyset(&sigGagne.sa_mask);
+    sigGagne.sa_flags = 0;
+
+    sigFinPartie.sa_handler = finPartie;
+    sigemptyset(&sigFinPartie.sa_mask);
+    sigFinPartie.sa_flags = 0;
 
     if (sigaction(SIG_MOTVALIDE, &sigMotValide, NULL) == -1) {
         perror("Erreur lors de l'enregistrement du gestionnaire de SIGUSR1");
@@ -196,6 +230,16 @@ int main() {
 
     if (sigaction(SIG_LISTEJOUEURS, &sigListeJoueurs, NULL) == -1) {
         perror("Erreur lors de l'enregistrement du gestionnaire de SIGLISTEJOUEURS");
+        exit(1);
+    }
+
+    if (sigaction(SIG_GAGNE, &sigGagne, NULL) == -1) {
+        perror("Erreur lors de l'enregistrement du gestionnaire de SIG_GAGNE");
+        exit(1);
+    }
+
+    if (sigaction(SIG_FINPARTIE, &sigFinPartie, NULL) == -1) {
+        perror("Erreur lors de l'enregistrement du gestionnaire de SIG_FINPARTIE");
         exit(1);
     }
 

@@ -6,7 +6,7 @@
 
 #define TAILLE_MAX 100
 #define MAX_MOTS 100
-#define MAX_SYLLABES 97
+#define MAX_SYLLABES 87
 #define FICHIER_DICTIONNAIRE "dictionnaire.txt"
 
 extern pthread_mutex_t mutexMots;

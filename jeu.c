@@ -32,7 +32,7 @@ char *syllabes[MAX_SYLLABES] = {
 char *genererCombinaison() {
     int index = rand() % MAX_SYLLABES;
     strncpy(combinaisonActuelle, syllabes[index], sizeof(combinaisonActuelle) - 1);
-    combinaisonActuelle[sizeof(combinaisonActuelle) - 1] = '\0'; // Assurez-vous de la terminaison
+    combinaisonActuelle[sizeof(combinaisonActuelle) - 1] = '\0';
     return combinaisonActuelle;
 }
 

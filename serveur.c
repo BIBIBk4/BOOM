@@ -7,14 +7,20 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <pthread.h>
+#include <asm-generic/errno.h>
 
 #include "jeu.h"
 #include "variables.h"
 
 #define MAX_JOUEURS 10
 
+int countdown = 10;
 t_joueur joueurs[MAX_JOUEURS]; 
-int nb_joueurs = 0;         
+int nb_joueurs = 0;
+int nb_joueurs_vivants = 0;
+int tour = 0;
+bool fin = false;
 
 void ajouter_joueur(pid_t pid, const char *pseudo) {
     if (nb_joueurs < MAX_JOUEURS) {
@@ -93,19 +99,65 @@ void envoyer_liste_joueurs() {
     }
 }
 
-void lancerPartie(int tour) {
+void changerTour(int tour) {
     printf("C'est au tour de %s (PID: %d)\n", joueurs[tour].pseudo, joueurs[tour].pid);
     joueurs[tour].tour = true;
     envoyer_liste_joueurs();
     sleep(2);
     envoyer_signal(joueurs[tour].pid, SIG_ATONTOUR);
     char combinaison[10];
+    printf("Génération combinaison\n");
     strcpy(combinaison, genererCombinaison());
+    printf("Combinaison générée : %s\n", combinaison);
     envoyer_message(joueurs[tour].pid, combinaison);
 }
 
+void *lancementPartie() {
+    nb_joueurs_vivants = nb_joueurs;
+
+    while (nb_joueurs_vivants > 1) {
+        // Reset the countdown and start the next player's turn
+        countdown = 10;
+        changerTour(tour);
+
+        while (countdown > 0) {
+            sleep(1);
+            countdown--;
+            printf("Temps restant: %d secondes, au tour de : %s\n", countdown, joueurs[tour].pseudo);
+        }
+
+        joueurs[tour].vivant = false;
+        printf("%s (PID: %d) est mort.\n", joueurs[tour].pseudo, joueurs[tour].pid);
+        envoyer_signal(joueurs[tour].pid, SIG_PERTEVIE);
+        sleep(1);
+        joueurs[tour].tour = false;
+        envoyer_liste_joueurs();
+        sleep(1);
+        nb_joueurs_vivants--;
+
+        // Calculate the next player's turn
+        do {
+            tour = (tour + 1) % nb_joueurs;
+        } while (!joueurs[tour].vivant);
+    }
+
+    for (int i = 0; i < nb_joueurs; i++) {
+        if (joueurs[i].vivant) {
+            printf("%s (PID: %d) a gagné !\n", joueurs[i].pseudo, joueurs[i].pid);
+            envoyer_signal(joueurs[i].pid, SIG_GAGNE);
+        }
+    }
+
+    for (int i=0; i<nb_joueurs; i++) {
+        envoyer_signal(joueurs[i].pid, SIG_FINPARTIE);
+    }
+    fin = true;
+
+    return NULL;
+}
+
+
 int main() {
-    int tour = 0;
     key_t cle = ftok("./dictionnaire.txt", 1); 
     if (cle == -1) {
         perror("Erreur lors de la création de la clé");
@@ -120,7 +172,7 @@ int main() {
 
     printf("Serveur démarré. En attente de joueurs...\n");
 
-    while (1) {
+    while (!fin) {
         t_message message;
 
         if (msgrcv(idFile, &message, sizeof(message.corps), 1, 0) == -1) {
@@ -159,7 +211,11 @@ int main() {
                 if (tous_pret()) {
                     printf("Tous les joueurs sont prêts. La partie commence !\n");
                     printf("---------------------------------------------\n");
-                    lancerPartie(tour);
+                    // Start the countdown thread
+                    countdown = 10;
+                    pthread_t thread;
+                    pthread_create(&thread, NULL, lancementPartie, NULL);
+                    pthread_detach(thread);
                     break;
                 }
                 break;
@@ -167,8 +223,11 @@ int main() {
                 if (motEstValide(message.corps.msg)) {
                     envoyer_signal(message.corps.pid, SIG_MOTVALIDE);
                     joueurs[tour].tour = false;
-                    tour = (tour + 1) % nb_joueurs;
-                    lancerPartie(tour);
+                    do {
+                        tour = (tour + 1) % nb_joueurs;
+                    } while (!joueurs[tour].vivant);
+                    countdown += 4;
+                    changerTour(tour);
                 } else {
                     envoyer_signal(message.corps.pid, SIG_MOTINVALIDE);
                 }
@@ -181,6 +240,7 @@ int main() {
     }
 
     msgctl(idFile, IPC_RMID, NULL);
+    printf("Fin du serveur\n");
 
     return 0;
 }
