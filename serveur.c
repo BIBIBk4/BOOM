@@ -13,7 +13,10 @@
 #include "jeu.h"
 #include "variables.h"
 
+//mutex bombe
+pthread_mutex_t countdown_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+//variables globales
 int countdown = 10;
 t_joueur joueurs[MAX_JOUEURS]; 
 int nb_joueurs = 0;
@@ -109,12 +112,16 @@ void *lancementPartie() {
 
     while (nb_joueurs_vivants > 1) {
         // Reset the countdown and start the next player's turn
+        pthread_mutex_lock(&countdown_mutex);
         countdown = 10;
+        pthread_mutex_unlock(&countdown_mutex);
         changerTour(tour);
 
         while (countdown > 0) {
             sleep(1);
+            pthread_mutex_lock(&countdown_mutex);
             countdown--;
+            pthread_mutex_unlock(&countdown_mutex);
             printf("Temps restant: %d secondes, au tour de : %s\n", countdown, joueurs[tour].pseudo);
         }
 
@@ -205,8 +212,9 @@ int main() {
                 if (tous_pret()) {
                     printf("Tous les joueurs sont prêts. La partie commence !\n");
                     printf("---------------------------------------------\n");
-                    // Start the countdown thread
+                    pthread_mutex_lock(&countdown_mutex);
                     countdown = 10;
+                    pthread_mutex_unlock(&countdown_mutex);
                     pthread_t thread;
                     pthread_create(&thread, NULL, lancementPartie, NULL);
                     pthread_detach(thread);
@@ -221,7 +229,9 @@ int main() {
                     do {
                         tour = (tour + 1) % nb_joueurs;
                     } while (!joueurs[tour].vivant);
+                    pthread_mutex_lock(&countdown_mutex);
                     countdown += 4;
+                    pthread_mutex_unlock(&countdown_mutex);
                     changerTour(tour);
                 } else {
                     envoyer_signal(message.corps.pid, SIG_MOTINVALIDE);
