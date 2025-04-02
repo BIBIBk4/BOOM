@@ -8,12 +8,11 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include <asm-generic/errno.h>
+#include "serveur.h"
 
 #include "jeu.h"
 #include "variables.h"
 
-#define MAX_JOUEURS 10
 
 int countdown = 10;
 t_joueur joueurs[MAX_JOUEURS]; 
@@ -38,13 +37,6 @@ void ajouter_joueur(pid_t pid, const char *pseudo) {
 void envoyer_signal(pid_t pid, int signal) {
     if (kill(pid, signal) == -1) {
         perror("Erreur lors de l'envoi du signal");
-    }
-}
-
-void envoyer_message_a_tous(const char *message) {
-    for (int i = 0; i < nb_joueurs; i++) {
-        printf("Envoi du message à %s (PID: %d) : %s\n", joueurs[i].pseudo, joueurs[i].pid, message);
-        envoyer_signal(joueurs[i].pid, SIG_PSEUDOVALIDE);
     }
 }
 
@@ -153,7 +145,7 @@ void *lancementPartie() {
     }
     fin = true;
 
-    return NULL;
+    exit(0);
 }
 
 
@@ -182,6 +174,7 @@ int main() {
 
         switch (message.corps.type) {
             case 0:
+                // Joueur qui se connecte
                 bool joueur_existe = false;
 
                 for (int i = 0; i < nb_joueurs; i++) {
@@ -199,6 +192,7 @@ int main() {
                 }
                 break;
             case 1:
+                // Joueur prêt
                 for (int i = 0; i < nb_joueurs; i++) {
                     if (joueurs[i].pid == message.corps.pid) {
                         joueurs[i].vivant = true;
@@ -220,6 +214,7 @@ int main() {
                 }
                 break;
             case 2:
+                // Joueur envoie un mot
                 if (motEstValide(message.corps.msg)) {
                     envoyer_signal(message.corps.pid, SIG_MOTVALIDE);
                     joueurs[tour].tour = false;
@@ -240,7 +235,6 @@ int main() {
     }
 
     msgctl(idFile, IPC_RMID, NULL);
-    printf("Fin du serveur\n");
 
     return 0;
 }

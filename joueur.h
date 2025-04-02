@@ -1,15 +1,6 @@
 #ifndef JOUEUR_H
 #define JOUEUR_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include <signal.h>
-
 // Prototypes des fonctions
 void demanderEtEnvoyerPseudo(int fileId);
 char *demanderReponse();
@@ -28,4 +19,4 @@ void gagne(int sig);
 void pseudoValide(int sig);
 void recevoirListeJoueurs(int sig);
 
-#endif // JOUEUR_H
+#endif

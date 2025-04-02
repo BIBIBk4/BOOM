@@ -5,12 +5,6 @@
 #include "jeu.h"
 
 // Variables globales
-pthread_mutex_t mutexMots = PTHREAD_MUTEX_INITIALIZER;
-pthread_t threadBombe;
-int bombeTempsRestant = 10;
-int joueurActuel = 0;
-int joueurElimine = -1;
-int nbJoueurs = 0;
 char combinaisonActuelle[10];
 char motsUtilises[MAX_MOTS][50];
 int nbMotsUtilises = 0;
@@ -30,6 +24,7 @@ char *syllabes[MAX_SYLLABES] = {
 
 // Générer une combinaison aléatoire
 char *genererCombinaison() {
+    srand(time(NULL));
     int index = rand() % MAX_SYLLABES;
     strncpy(combinaisonActuelle, syllabes[index], sizeof(combinaisonActuelle) - 1);
     combinaisonActuelle[sizeof(combinaisonActuelle) - 1] = '\0';
@@ -38,29 +33,25 @@ char *genererCombinaison() {
 
 // Vérifier si un mot est valide
 int motEstValide(char* mot) {
-    pthread_mutex_lock(&mutexMots);
 
     // Vérifier si le mot contient la combinaison actuelle
     if (!strstr(mot, combinaisonActuelle)) {
-        pthread_mutex_unlock(&mutexMots);
         return 0;
     }
 
     //Vérifier si le mot existe dans le fichier dictionnaire
     if (!checkMot(mot)) {
-        pthread_mutex_unlock(&mutexMots);
         return 0;
     }
 
     // Vérifier si le mot a déjà été utilisé
     for (int i = 0; i < nbMotsUtilises; i++) {
         if (strcmp(motsUtilises[i], mot) == 0) {
-            pthread_mutex_unlock(&mutexMots);
             return 0;
         }
     }
+    ajouterMot(mot);
 
-    pthread_mutex_unlock(&mutexMots);
     return 1;
 }
 

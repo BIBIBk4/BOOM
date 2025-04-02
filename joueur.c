@@ -1,6 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/msg.h>
 #include "joueur.h"
 #include "variables.h"
-#include <stdio.h>
 
 bool joueur_vivant = true;
 
@@ -149,10 +152,12 @@ void perdu(int sig) {
     joueur_vivant = false;
 }
 
+// Gestionnaire de signal pour SIG_GAGNE
 void gagne(int sig) {
     printf("Félicitations, vous avez gagné !\n");
 }
 
+// Gestionnaire de signal pour SIG_FINPARTIE
 void finPartie(int sig) {
     printf("La partie est terminée.\n");
     exit(0);

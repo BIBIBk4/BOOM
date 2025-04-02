@@ -1,22 +1,10 @@
-CC = gcc
-CFLAGS = -Wall -pthread
-
-all: bombe joueur serveur
-
-jeu: bombe.c jeu.c partie.c
-	$(CC) $(CFLAGS) -o jeu bombe.c jeu.c partie.c
-
-bombe : bombe.c
-	$(CC) $(CFLAGS) -o bombe bombe.c
+all: joueur serveur
 
 joueur: joueur.c jeu.c
-	$(CC) $(CFLAGS) -o joueur joueur.c jeu.c
+	gcc joueur.c jeu.c -o joueur -pthread
 
 serveur: serveur.c jeu.c
-	$(CC) $(CFLAGS) -o serveur serveur.c jeu.c
-
-serveur.o: serveur.c jeu.h partie.h
-	$(CC) $(CFLAGS) -c serveur.c
+	gcc serveur.c jeu.c -o serveur -pthread
 
 clean:
-	rm -f jeu joueur serveur partie
+	rm -f jeu joueur serveur

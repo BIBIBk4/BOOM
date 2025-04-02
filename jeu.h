@@ -9,12 +9,6 @@
 #define MAX_SYLLABES 87
 #define FICHIER_DICTIONNAIRE "dictionnaire.txt"
 
-extern pthread_mutex_t mutexMots;
-extern pthread_t threadBombe;
-extern int bombeTempsRestant;
-extern int joueurActuel;
-extern int joueurElimine;
-extern int nbJoueurs;
 extern char combinaisonActuelle[10];
 extern char motsUtilises[MAX_MOTS][50];
 extern int nbMotsUtilises;
