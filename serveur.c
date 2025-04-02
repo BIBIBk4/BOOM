@@ -81,14 +81,12 @@ void envoyer_liste_joueurs() {
     liste[0] = '\0';
 
     for (int i = 0; i < nb_joueurs; i++) {
-        char joueur_info[80]; // Increase buffer size to avoid truncation
-        printf("joueur :  %s, %d, %d\n", joueurs[i].pseudo, joueurs[i].vivant, joueurs[i].tour);
+        char joueur_info[80];
         snprintf(joueur_info, sizeof(joueur_info), "%s:%d:%d\n", joueurs[i].pseudo, joueurs[i].vivant, joueurs[i].tour);
         strncat(liste, joueur_info, sizeof(liste) - strlen(liste) - 1);
     }
 
     for (int i = 0; i < nb_joueurs; i++) {
-        printf("joueur : %d, %s\n", joueurs[i].pid, joueurs[i].pseudo);
         envoyer_signal(joueurs[i].pid, SIG_LISTEJOUEURS);
         envoyer_message(joueurs[i].pid, liste); // Assuming type 3 for the list message
     }
